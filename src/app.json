@@ -1,0 +1,27 @@
+{
+  "window": {
+    "navigationBarTitleText": "小程序",
+    "enablePullDownRefresh": false
+  },
+  "requiredBackgroundModes": [
+    "audio"
+  ],
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "plugins": {},
+  "useExtendedLib": {
+    "weui": true
+  },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "需要写入相册权限"
+    },
+    "scope.canvas": {
+      "desc": "需要canvas权限"
+    },
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于小程序位置接口的效果展示"
+    }
+  }
+}
