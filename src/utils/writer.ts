@@ -83,20 +83,21 @@ export function encodeJsonWithLength(json: object | string): ArrayBuffer {
     const jsonData = encodeUtf8(jsonStr)
     const length = jsonData.length
 
-    const totalLength = 2 + 3 + length + 2 // 头部 + 长度 + 数据 + 尾部
+    const totalLength = 2 + 1 + 3 + length + 2 // 头部 + 命令 + 长度 + 数据 + 尾部
     const buffer = new Uint8Array(totalLength)
 
     // 头部固定值 0xAA55
     buffer[0] = 0xAA
     buffer[1] = 0x55
+    buffer[2] = 0x01
 
     // 长度字段（3字节）为数据区长度（不包含头尾），即 jsonData.length
-    buffer[2] = (length >> 16) & 0xff // 高位
-    buffer[3] = (length >> 8) & 0xff // 中位
-    buffer[4] = length & 0xff        // 低位
+    buffer[3] = (length >> 16) & 0xff // 高位
+    buffer[4] = (length >> 8) & 0xff // 中位
+    buffer[5] = length & 0xff        // 低位
 
     // 设置数据内容
-    buffer.set(jsonData, 4)
+    buffer.set(jsonData, 6)
 
     // 尾部固定值 0x55AA
     buffer[totalLength - 2] = 0x55
@@ -116,21 +117,22 @@ export async function writeAudioData({
 
 
     const dataLength = value.byteLength
-    const totalLength = 2 + 3 + dataLength + 2 // 头部 + 3字节长度 + 数据 + 尾部
+    const totalLength = 3 + 3 + dataLength + 2 // 头部 + 1自己长度命令 + 3字节长度 + 数据 + 尾部
 
     const buffer = new Uint8Array(totalLength)
 
     // 头部 0xAA55
     buffer[0] = 0xAA
     buffer[1] = 0x44
+    buffer[2] = 0x02
 
     // 3 字节数据长度（高位在前）
-    buffer[2] = (dataLength >> 16) & 0xff // 高位
-    buffer[3] = (dataLength >> 8) & 0xff  // 中位
-    buffer[4] = dataLength & 0xff         // 低位
+    buffer[3] = (dataLength >> 16) & 0xff // 高位
+    buffer[4] = (dataLength >> 8) & 0xff  // 中位
+    buffer[5] = dataLength & 0xff         // 低位
 
     // 数据区
-    buffer.set(new Uint8Array(value), 5)
+    buffer.set(new Uint8Array(value), 6)
 
     // 尾部 0x55AA
     buffer[totalLength - 2] = 0x44
