@@ -27,7 +27,7 @@
             <view> 特征码:{{ character.characteristicId }}</view>
             <view> 服务id:{{ character.serviceId }}</view>
           </view>
-         <view> 消息发送状态: {{ transferObj.transferData }}:{{transferObj.transferProgress}}</view>
+         <view> 消息发送状态: {{ transferObj.transferData }}:{{transferObj.transferProgress}}%</view>
         </view>
         <view class="msg-data">
           <view v-if="state.showEle">电量数据：{{state.eleVal}}</view>
@@ -236,6 +236,7 @@ const onProgress = (text:string,p:number)=>{
 
 const sendAudioData = async (buffer:ArrayBuffer) => {
   try {
+    transferObj.value.transferProgress = 0
     const deviceId = theDevice.value.deviceId
     console.log("开始发送音频数据",buffer.byteLength)
     await writeAudioData({ deviceId:deviceId, serviceId:character.value.serviceId,
@@ -253,8 +254,8 @@ const sendSceneData = async (id:number,count:number) => {
     // return writeLargeData({ ...options, value: buffer })
     const deviceId = theDevice.value.deviceId
     console.log(character.value)
-    state.transferData = "准备发送消息......"
-    state.transferProgress = 0
+    transferObj.value.transferProgress = 0
+    transferObj.value.transferData = "准备发送消息......"
     await writeJsonWithLength({
       deviceId,
       serviceId: character.value.serviceId,
@@ -287,9 +288,8 @@ const sendTestData = async () => {
   try {
     const deviceId = theDevice.value.deviceId
 
-    console.log(character.value)
-    state.transferData = "准备发送消息......"
-    state.transferProgress = 0
+    transferObj.value.transferProgress = 0
+    transferObj.value.transferData = "准备发送消息......"
     writeJsonWithLength({
       deviceId,
       serviceId: character.value.serviceId,
