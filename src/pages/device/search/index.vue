@@ -130,20 +130,23 @@ const state = reactive({
 // 初始化蓝牙
 Taro.openBluetoothAdapter({
   fail: function (res) {
+    console.log("打开适配器失败",res)
     if (res.errCode === 10001) {
       showBlueTip.value = true
     }
   },
   success: function (res) {
+    console.log("打开适配器成功")
     isBlueOk.value = true
     startDeviceSearch()
   }
 }).catch(function (err) {
-
+  console.log("打开适配器失败12",err)
 })
 
 Taro.onBluetoothAdapterStateChange((res) => {
   isBlueOk.value = res.available
+  console.log("onBluetoothAdapterStateChange",res)
   if (res.available) {
     startDeviceSearch()
   }
@@ -169,6 +172,7 @@ const closeDialog = () => {
 }
 
 const startDeviceSearch = () => {
+  console.log("startDeviceSearch")
 // 以微信硬件平台的蓝牙智能灯为例，主服务的 UUID 是 FEE7。传入这个参数，只搜索主服务 UUID 为 FEE7 的设备
   Taro.startBluetoothDevicesDiscovery({
     fail: function (res) {
@@ -179,6 +183,7 @@ const startDeviceSearch = () => {
 
 
 Taro.onBluetoothDeviceFound((res) => {
+  console.log("onBluetoothDeviceFound",res)
   res.devices.forEach((e) => {
     console.log(e.name,e.localName,e.deviceId)
     if (
