@@ -48,7 +48,7 @@ export async function writeLargeData({
     while (offset < total) {
         const end = Math.min(offset + CHUNK_SIZE, total)
         const chunk = value.slice(offset, end)
-        console.log('写入数据中', offset)
+        console.log('写入数据中', end)
         await Taro.writeBLECharacteristicValue({
             deviceId,
             serviceId,
@@ -57,7 +57,7 @@ export async function writeLargeData({
         })
 
         if (onProgress) {
-            onProgress("写入数据中",Math.min(100, Math.round((end / total) * 100)))
+            onProgress("写入数据中 ",Math.min(100, Math.round((end / total) * 100)))
         }
 
         await sleep(chunkDelay)
@@ -281,11 +281,32 @@ export async function downloadFileAsArrayBuffer(url: string): Promise<ArrayBuffe
 }
 
 function decodeUtf8(data: Uint8Array): string {
-    try {
-        return new TextDecoder('utf-8').decode(data)
-    } catch (e) {
-        console.warn('⚠️ 解码失败，可能不是 UTF-8 格式', e)
-        return ''
+    let result = ''
+    let i = 0
+
+    while (i < data.length) {
+        const byte1 = data[i++]
+
+        if (byte1 < 0x80) {
+            result += String.fromCharCode(byte1)
+        } else if (byte1 >= 0xc0 && byte1 < 0xe0) {
+            const byte2 = data[i++]
+            result += String.fromCharCode(((byte1 & 0x1f) << 6) | (byte2 & 0x3f))
+        } else if (byte1 >= 0xe0 && byte1 < 0xf0) {
+            const byte2 = data[i++]
+            const byte3 = data[i++]
+            result += String.fromCharCode(
+                ((byte1 & 0x0f) << 12) |
+                ((byte2 & 0x3f) << 6) |
+                (byte3 & 0x3f)
+            )
+        } else {
+            // 非法 UTF-8 或超出 BMP 范围（不支持 4 字节）
+            result += '?'
+        }
     }
+
+    return result
 }
+
 

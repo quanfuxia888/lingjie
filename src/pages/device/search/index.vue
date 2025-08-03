@@ -27,11 +27,11 @@
             <view> 特征码:{{ character.characteristicId }}</view>
             <view> 服务id:{{ character.serviceId }}</view>
           </view>
-         <view> 消息发送状态: {{ state.transferData }}:{{state.transferProgress}}</view>
+         <view> 消息发送状态: {{ transferObj.transferData }}:{{transferObj.transferProgress}}</view>
         </view>
         <view class="msg-data">
           <view v-if="state.showEle">电量数据：{{state.eleVal}}</view>
-          <view>收到数据:{{state.recData}}</view>
+          <view>收到数据:{{transferObj.recData}}</view>
         </view>
       </view>
       <view v-else>
@@ -111,10 +111,10 @@ const themeVars = ref({
 const showBlueTip = ref(false)
 const isBlueOk = ref(false)
 
+const transferObj = ref<{transferData:string,transferProgress:number,recData:string}>({transferData:"",transferProgress:0,recData:""})
+
 const state = reactive({
   msg: '新搜索中...',
-  transferData: '',
-  transferProgress: 0,
   type: 'text',
   show: true,
   cover: false,
@@ -124,7 +124,6 @@ const state = reactive({
   showEle:false,
   eleVal: 0,
   bottom: '',
-  recData:'',
   center: true
 })
 
@@ -211,7 +210,7 @@ const addDevice = (deviceInfo: DeviceInfo) => {
 
 
 const receiveData = (text:string) => {
-  state.recData = text
+  transferObj.value.recData = text
   console.log(text)
 }
 
@@ -229,9 +228,10 @@ const connectBle = async (deviceId: string) => {
 
 // 发送场景 1
 
-const onProgress = (text:string,p:Number)=>{
-  state.transferData = text
-  console.log(text,p)
+const onProgress = (text:string,p:number)=>{
+  transferObj.value.transferData = text
+  transferObj.value.transferProgress = p
+  console.log("写入日志：",text,p)
 }
 
 const sendAudioData = async (buffer:ArrayBuffer) => {
