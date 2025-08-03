@@ -2,8 +2,6 @@ export default defineAppConfig({
   pages: [
     'pages/device/add/index',
     'pages/device/search/index',
-    'pages/device/wifi/index',
-    'pages/device/changeAudio/index',
   ],
   permission: {
     "scope.canvas": {
@@ -17,26 +15,6 @@ export default defineAppConfig({
   requiredPrivateInfos: [
     "getLocation"
   ],
-  tabBar: {
-    custom: true,
-    color: '#ccc',
-    selectedColor: '#125ad3',
-    list: [
-      {
-        pagePath: 'pages/device/add/index',
-        text: '',
-        iconPath: 'images/tabbar/index.png',
-        selectedIconPath: 'images/tabbar/index_active.png',
-      },
-
-      {
-        pagePath: 'pages/device/wifi/index',
-        text: '',
-        iconPath: 'images/tabbar/role.png',
-        selectedIconPath: 'images/tabbar/role_active.png',
-      }
-    ]
-  },
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#DFE4F2',

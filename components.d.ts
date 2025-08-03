@@ -13,7 +13,5 @@ declare module 'vue' {
     NutConfigProvider: typeof import('@nutui/nutui-taro')['ConfigProvider']
     NutDialog: typeof import('@nutui/nutui-taro')['Dialog']
     NutNotify: typeof import('@nutui/nutui-taro')['Notify']
-    NutStep: typeof import('@nutui/nutui-taro')['Step']
-    NutSteps: typeof import('@nutui/nutui-taro')['Steps']
   }
 }

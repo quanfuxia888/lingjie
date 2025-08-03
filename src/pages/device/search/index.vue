@@ -27,10 +27,11 @@
             <view> 特征码:{{ character.characteristicId }}</view>
             <view> 服务id:{{ character.serviceId }}</view>
           </view>
-         <view> 消息发送状态: {{ state.transferData }}</view>
+         <view> 消息发送状态: {{ state.transferData }}:{{state.transferProgress}}</view>
         </view>
         <view class="msg-data">
           <view v-if="state.showEle">电量数据：{{state.eleVal}}</view>
+          <view>收到数据:{{state.recData}}</view>
         </view>
       </view>
       <view v-else>
@@ -90,7 +91,12 @@ import Taro from "@tarojs/taro";
 import {Loading} from '@nutui/icons-vue-taro';
 import {onUnmounted, ref, reactive} from "vue";
 import {DeviceInfo, CharacterInfo} from "../../../utils/bt";
-import {connectToDevice, getPrimaryWriteCharacteristic, writeJsonWithLength} from "@/utils/writer";
+import {
+  connectToDevice,
+  getPrimaryWriteCharacteristic,
+  writeJsonWithLength,
+  downloadFileAsArrayBuffer, writeAudioData, enableNotifyAndListen
+} from "@/utils/writer";
 
 
 const devices = ref<DeviceInfo[]>([])
@@ -108,6 +114,7 @@ const isBlueOk = ref(false)
 const state = reactive({
   msg: '新搜索中...',
   transferData: '',
+  transferProgress: 0,
   type: 'text',
   show: true,
   cover: false,
@@ -117,6 +124,7 @@ const state = reactive({
   showEle:false,
   eleVal: 0,
   bottom: '',
+  recData:'',
   center: true
 })
 
@@ -201,38 +209,37 @@ const addDevice = (deviceInfo: DeviceInfo) => {
   connectBle(deviceInfo.deviceId)
 }
 
+
+const receiveData = (text:string) => {
+  state.recData = text
+  console.log(text)
+}
+
 const connectBle = async (deviceId: string) => {
   await connectToDevice(deviceId, state)
   console.log("state value:", state)
   if (state.bleConnected) {
     theDevice.value = deviceMap.get(deviceId)
     character.value = await getPrimaryWriteCharacteristic(deviceId)
+
+    enableNotifyAndListen({deviceId,serviceId:character.value.serviceId,onData:receiveData})
+
   }
 }
 
 // 发送场景 1
 
-const sendScene1Data = async () => {
+const onProgress = (text:string,p:Number)=>{
+  state.transferData = text
+  console.log(text,p)
+}
+
+const sendAudioData = async (buffer:ArrayBuffer) => {
   try {
     const deviceId = theDevice.value.deviceId
-
-    console.log(character.value)
-    let times = 1;
-    state.transferData = "准备发送消息......"
-    setInterval(() => {
-      times = times + 1;
-      state.transferData = "发送消息中......"
-      writeJsonWithLength({
-        deviceId,
-        serviceId: character.value.serviceId,
-        characteristicId: character.value.characteristicId,
-        json: {
-          "t": 1
-        },
-        onProgress: p => state.transferData = `第${times}次发送数据：` + Date.now() + `:发送进度 ${p}%`,
-      })
-    }, 10000, character)
-
+    console.log("开始发送音频数据",buffer.byteLength)
+    await writeAudioData({ deviceId:deviceId, serviceId:character.value.serviceId,
+      characteristicId:character.value.characteristicId,value:buffer,chunkDelay:20, onProgress:onProgress})
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
     console.error(e)
@@ -241,10 +248,14 @@ const sendScene1Data = async () => {
 
 const sendSceneData = async (id:number,count:number) => {
   try {
+    let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
+    const buffer = await downloadFileAsArrayBuffer(url)
+    // return writeLargeData({ ...options, value: buffer })
     const deviceId = theDevice.value.deviceId
     console.log(character.value)
     state.transferData = "准备发送消息......"
-    writeJsonWithLength({
+    state.transferProgress = 0
+    await writeJsonWithLength({
       deviceId,
       serviceId: character.value.serviceId,
       characteristicId: character.value.characteristicId,
@@ -262,8 +273,9 @@ const sendSceneData = async (id:number,count:number) => {
           }
         }
       },
-      onProgress: p => state.transferData = `发送数据：` + Date.now() + `:发送进度 ${p}%`,
+      onProgress: onProgress,
     })
+    await sendAudioData(buffer)
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
     console.error(e)
@@ -277,6 +289,7 @@ const sendTestData = async () => {
 
     console.log(character.value)
     state.transferData = "准备发送消息......"
+    state.transferProgress = 0
     writeJsonWithLength({
       deviceId,
       serviceId: character.value.serviceId,
@@ -284,7 +297,7 @@ const sendTestData = async () => {
       json: {
         "t": 1
       },
-      onProgress: p => state.transferData = `发送数据：` + Date.now() + `:发送进度 ${p}%`,
+      onProgress: onProgress,
     })
 
   } catch (e) {

@@ -4,7 +4,7 @@ import NutUIResolver from '@nutui/auto-import-resolver';
 const path = require('path');
 
 const config = {
-  projectName: 'wx_ai_hardware',
+  projectName: 'lingjie',
   date: '2025-3-26',
   designWidth(input) {
     if (input?.file?.replace(/\\+/g, '/').indexOf('@nutui') > -1) {

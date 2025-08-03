@@ -1,6 +1,5 @@
 // src/utils/bluetooth/writer.ts
 import Taro from '@tarojs/taro'
-import character from "@/api/modules/character";
 import {CharacterInfo} from "@/utils/bt";
 
 const DEFAULT_MTU = 244
@@ -17,7 +16,7 @@ export interface WriteLargeOptions {
     characteristicId: string
     value: ArrayBuffer
     chunkDelay?: number // ms
-    onProgress?: (progress: number) => void
+    onProgress?: (text:string,progress:number) => void
 }
 
 export interface StateInterface {
@@ -58,7 +57,7 @@ export async function writeLargeData({
         })
 
         if (onProgress) {
-            onProgress(Math.min(100, Math.round((end / total) * 100)))
+            onProgress("写入数据中",Math.min(100, Math.round((end / total) * 100)))
         }
 
         await sleep(chunkDelay)
@@ -84,12 +83,60 @@ export function encodeJsonWithLength(json: object | string): ArrayBuffer {
     const jsonData = encodeUtf8(jsonStr)
     const length = jsonData.length
 
-    const buffer = new Uint8Array(length + 2)
-    buffer[0] = (length >> 8) & 0xff // 高位
-    buffer[1] = length & 0xff        // 低位
-    buffer.set(jsonData, 2)
+    const totalLength = 2 + 3 + length + 2 // 头部 + 长度 + 数据 + 尾部
+    const buffer = new Uint8Array(totalLength)
+
+    // 头部固定值 0xAA55
+    buffer[0] = 0xAA
+    buffer[1] = 0x55
+
+    // 长度字段（3字节）为数据区长度（不包含头尾），即 jsonData.length
+    buffer[2] = (length >> 16) & 0xff // 高位
+    buffer[3] = (length >> 8) & 0xff // 中位
+    buffer[4] = length & 0xff        // 低位
+
+    // 设置数据内容
+    buffer.set(jsonData, 4)
+
+    // 尾部固定值 0x55AA
+    buffer[totalLength - 2] = 0x55
+    buffer[totalLength - 1] = 0xAA
 
     return buffer.buffer
+}
+
+export async function writeAudioData({
+                                         deviceId,
+                                         serviceId,
+                                         characteristicId,
+                                         value,
+                                         chunkDelay = 50,
+                                         onProgress,
+                                     }: WriteLargeOptions): Promise<void> {
+
+
+    const dataLength = value.byteLength
+    const totalLength = 2 + 3 + dataLength + 2 // 头部 + 3字节长度 + 数据 + 尾部
+
+    const buffer = new Uint8Array(totalLength)
+
+    // 头部 0xAA55
+    buffer[0] = 0xAA
+    buffer[1] = 0x44
+
+    // 3 字节数据长度（高位在前）
+    buffer[2] = (dataLength >> 16) & 0xff // 高位
+    buffer[3] = (dataLength >> 8) & 0xff  // 中位
+    buffer[4] = dataLength & 0xff         // 低位
+
+    // 数据区
+    buffer.set(new Uint8Array(value), 5)
+
+    // 尾部 0x55AA
+    buffer[totalLength - 2] = 0x44
+    buffer[totalLength - 1] = 0xAA
+
+    await writeLargeData({deviceId, serviceId, characteristicId, value:buffer.buffer,chunkDelay,onProgress})
 }
 
 /**
@@ -103,6 +150,7 @@ export async function writeJsonWithLength(
     const buffer = encodeJsonWithLength(options.json)
     return writeLargeData({ ...options, value: buffer })
 }
+
 
 /**
  * 连接 BLE 设备
@@ -163,3 +211,81 @@ export async function getPrimaryWriteCharacteristic(deviceId: string): Promise<C
         characteristicId: writeChar.uuid,
     }
 }
+
+export async function enableNotifyAndListen({
+                                                deviceId,
+                                                serviceId,
+                                                onData,
+                                            }: {
+    deviceId: string
+    serviceId: string
+    onData?: (text: string) => void
+}) {
+    const { characteristics } = await Taro.getBLEDeviceCharacteristics({
+        deviceId,
+        serviceId,
+    })
+
+    const notifyChar = characteristics.find(c =>
+        (c.properties.notify || c.properties.indicate)
+    )
+
+    if (!notifyChar) throw new Error('找不到支持 notify/indicate 的特征')
+
+    await Taro.notifyBLECharacteristicValueChange({
+        deviceId,
+        serviceId,
+        characteristicId: notifyChar.uuid,
+        state: true,
+    })
+
+    console.log('✅ Notify 已开启，等待设备推送数据...')
+
+    Taro.onBLECharacteristicValueChange(res => {
+        const data = new Uint8Array(res.value)
+        const text = decodeUtf8(data)
+
+        console.log(`📥 收到 ${res.characteristicId} 数据:`, data, '| 转换为:', text)
+
+        if (onData) {
+            onData(text)
+        }
+    })
+}
+
+export async function downloadFileAsArrayBuffer(url: string): Promise<ArrayBuffer> {
+    const downloadRes = await Taro.downloadFile({ url })
+
+    if (downloadRes.statusCode !== 200 || !downloadRes.tempFilePath) {
+        throw new Error('文件下载失败')
+    }
+
+    const fs = wx.getFileSystemManager()
+
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+        fs.readFile({
+            filePath: downloadRes.tempFilePath,
+            encoding: undefined, // 注意：不要设置为 base64
+            success(res) {
+                console.log("读取音频数据成功",res)
+                // const buffer = new Uint8Array(res.data).buffer
+
+                resolve( res.data as ArrayBuffer)
+            },
+            fail(err) {
+                console.log("读取音频数据失败",err)
+                reject(err)
+            },
+        })
+    })
+}
+
+function decodeUtf8(data: Uint8Array): string {
+    try {
+        return new TextDecoder('utf-8').decode(data)
+    } catch (e) {
+        console.warn('⚠️ 解码失败，可能不是 UTF-8 格式', e)
+        return ''
+    }
+}
+
