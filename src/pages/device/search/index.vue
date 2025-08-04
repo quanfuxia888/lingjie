@@ -20,6 +20,8 @@
           <nut-button class="msg-btn" block size="large" type="primary" @click="sendTestData">获取电量</nut-button>
           <nut-button class="msg-btn" block size="large" type="primary" @click="setDeviceData">设置设备信息</nut-button>
           <nut-button class="msg-btn" block size="large" type="primary" @click="getSceneData">获取场景信息</nut-button>
+          <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(1)">发送音频1</nut-button>
+          <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(2)">发送音频2</nut-button>
           <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
           <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
           <nut-button class="msg-btn" block size="large" type="default" @click="delScene(1)">删除场景1</nut-button>
@@ -252,7 +254,7 @@ const sendAudioData = async (buffer: ArrayBuffer, audioId: number) => {
     console.log("开始发送音频数据", buffer.byteLength)
     await writeAudioData({
       deviceId: deviceId, serviceId: character.value.serviceId,
-      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 20, audioId, onProgress: onProgress
+      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 50, audioId, onProgress: onProgress
     })
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
@@ -285,13 +287,17 @@ const delScene = async (id: number) => {
   }
 }
 
+const sendAudioMp3Data = async (id: number) => {
+  let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
+  const buffer = await downloadFileAsArrayBuffer(url)
+  // return writeLargeData({ ...options, value: buffer })
+  await sendAudioData(buffer, id)
+}
+
 // 添加场景
 const sendSceneData = async (id: number, count: number, s: number, f: number, v: number, p: number, t: number) => {
   try {
-    let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
-    const buffer = await downloadFileAsArrayBuffer(url)
-    // return writeLargeData({ ...options, value: buffer })
-    await sendAudioData(buffer, id)
+
     const deviceId = theDevice.value.deviceId
     console.log(character.value)
     transferObj.value.transferProgress = 0

@@ -42,7 +42,7 @@ function convetBuffer2Array(buffer: Object) {
 function readByte(byteArr: number[]): number {
   return byteArr.shift()! & 0xff;
 }
-function getRandom1To9(): number {
+export function getRandom1To9(): number {
   return Math.floor(Math.random() * 9) + 1;
 }
 function readBytes(byteArr: number[], n: number): number[] {
