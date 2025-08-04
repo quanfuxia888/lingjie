@@ -254,7 +254,7 @@ const sendAudioData = async (buffer: ArrayBuffer, audioId: number) => {
     console.log("开始发送音频数据", buffer.byteLength)
     await writeAudioData({
       deviceId: deviceId, serviceId: character.value.serviceId,
-      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 50, audioId, onProgress: onProgress
+      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 150, audioId:audioId, onProgress: onProgress
     })
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})

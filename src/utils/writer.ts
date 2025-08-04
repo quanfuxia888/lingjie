@@ -129,6 +129,8 @@ export async function writeAudioData({
     buffer[2] = 0x02
     buffer[3] = audioId | 0x00
 
+    console.log("音频协议:",buffer[2],"-",buffer[3])
+
     // 3 字节数据长度（高位在前）
     buffer[4] = (dataLength >> 16) & 0xff // 高位
     buffer[5] = (dataLength >> 8) & 0xff  // 中位
