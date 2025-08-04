@@ -49,7 +49,7 @@ export async function writeLargeData({
     while (offset < total) {
         const end = Math.min(offset + CHUNK_SIZE, total)
         const chunk = value.slice(offset, end)
-        console.log('写入数据中', end)
+        // console.log('写入数据中', end)
         await Taro.writeBLECharacteristicValue({
             deviceId,
             serviceId,

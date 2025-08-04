@@ -189,13 +189,10 @@ const startDeviceSearch = () => {
 
 
 Taro.onBluetoothDeviceFound((res) => {
-  console.log("onBluetoothDeviceFound", res)
   res.devices.forEach((e) => {
-    console.log(e.name, e.localName, e.deviceId)
     if (
         (e.name && e.name.toLowerCase().includes("aibt")) ||  // AIBT 小写匹配
         (e.name && e.name.toLowerCase().includes("vin")) ||  // AIBT 小写匹配
-        (e.name && e.name.toLowerCase().includes("jrh")) ||   // JRH 小写匹配
         (e.name && e.name.toLowerCase().includes("ble"))      // 新增 BLE 小写匹配
     ) {
       state.show = false
@@ -216,7 +213,9 @@ Taro.onBluetoothDeviceFound((res) => {
 
 
 const addDevice = (deviceInfo: DeviceInfo) => {
-  Taro.stopBluetoothDevicesDiscovery()
+  Taro.stopBluetoothDevicesDiscovery({success: function (res) {
+      console.log("停止蓝牙搜索",res)
+    }})
   showSuccess.value = true
   connectBle(deviceInfo.deviceId)
 }
@@ -237,6 +236,7 @@ const connectBle = async (deviceId: string) => {
     enableNotifyAndListen({deviceId, serviceId: character.value.serviceId, onData: receiveData})
 
   }
+  Taro.stopBluetoothDevicesDiscovery()
 }
 
 // 发送场景 1
