@@ -16,6 +16,7 @@ export interface WriteLargeOptions {
     characteristicId: string
     value: ArrayBuffer
     chunkDelay?: number // ms
+    audioId?:number
     onProgress?: (text:string,progress:number) => void
 }
 
@@ -100,8 +101,8 @@ export function encodeJsonWithLength(json: object | string): ArrayBuffer {
     buffer.set(jsonData, 6)
 
     // 尾部固定值 0x55AA
-    buffer[totalLength - 2] = 0x55
-    buffer[totalLength - 1] = 0xAA
+    buffer[totalLength - 2] = 0xAA
+    buffer[totalLength - 1] = 0x55
 
     return buffer.buffer
 }
@@ -112,31 +113,33 @@ export async function writeAudioData({
                                          characteristicId,
                                          value,
                                          chunkDelay = 50,
+                                        audioId = 1,
                                          onProgress,
                                      }: WriteLargeOptions): Promise<void> {
 
 
     const dataLength = value.byteLength
-    const totalLength = 3 + 3 + dataLength + 2 // 头部 + 1自己长度命令 + 3字节长度 + 数据 + 尾部
+    const totalLength = 2 + 1 + 1 + 3 + dataLength + 2 // 头部 + 1自己长度命令 + 1字节音频id + 3字节长度 + 数据 + 尾部
 
     const buffer = new Uint8Array(totalLength)
 
     // 头部 0xAA55
     buffer[0] = 0xAA
-    buffer[1] = 0x44
+    buffer[1] = 0x55
     buffer[2] = 0x02
+    buffer[3] = audioId | 0x00
 
     // 3 字节数据长度（高位在前）
-    buffer[3] = (dataLength >> 16) & 0xff // 高位
-    buffer[4] = (dataLength >> 8) & 0xff  // 中位
-    buffer[5] = dataLength & 0xff         // 低位
+    buffer[4] = (dataLength >> 16) & 0xff // 高位
+    buffer[5] = (dataLength >> 8) & 0xff  // 中位
+    buffer[6] = dataLength & 0xff         // 低位
 
     // 数据区
-    buffer.set(new Uint8Array(value), 6)
+    buffer.set(new Uint8Array(value), 7)
 
     // 尾部 0x55AA
-    buffer[totalLength - 2] = 0x44
-    buffer[totalLength - 1] = 0xAA
+    buffer[totalLength - 2] = 0xAA
+    buffer[totalLength - 1] = 0x55
 
     await writeLargeData({deviceId, serviceId, characteristicId, value:buffer.buffer,chunkDelay,onProgress})
 }

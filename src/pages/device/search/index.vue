@@ -18,8 +18,12 @@
         </nut-cell>
         <view class="send-msg">
           <nut-button class="msg-btn" block size="large" type="primary" @click="sendTestData">获取电量</nut-button>
-          <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5)">发送场景1</nut-button>
-          <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4)">发送场景2</nut-button>
+          <nut-button class="msg-btn" block size="large" type="primary" @click="setDeviceData">设置设备信息</nut-button>
+          <nut-button class="msg-btn" block size="large" type="primary" @click="getSceneData">获取场景信息</nut-button>
+          <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
+          <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
+          <nut-button class="msg-btn" block size="large" type="default" @click="delScene(1)">删除场景1</nut-button>
+          <nut-button class="msg-btn" block size="large" type="default" @click="delScene(2)">删除场景2</nut-button>
 
         </view>
         <view class="msg-data">
@@ -27,11 +31,11 @@
             <view> 特征码:{{ character.characteristicId }}</view>
             <view> 服务id:{{ character.serviceId }}</view>
           </view>
-         <view> 消息发送状态: {{ transferObj.transferData }}:{{transferObj.transferProgress}}%</view>
+          <view> 消息发送状态: {{ transferObj.transferData }}:{{ transferObj.transferProgress }}%</view>
         </view>
         <view class="msg-data">
-          <view v-if="state.showEle">电量数据：{{state.eleVal}}</view>
-          <view>收到数据:{{transferObj.recData}}</view>
+          <view v-if="state.showEle">电量数据：{{ state.eleVal }}</view>
+          <view>收到数据:{{ transferObj.recData }}</view>
         </view>
       </view>
       <view v-else>
@@ -90,7 +94,7 @@
 import Taro from "@tarojs/taro";
 import {Loading} from '@nutui/icons-vue-taro';
 import {onUnmounted, ref, reactive} from "vue";
-import {DeviceInfo, CharacterInfo} from "../../../utils/bt";
+import {DeviceInfo, CharacterInfo, getRandom1To9} from "../../../utils/bt";
 import {
   connectToDevice,
   getPrimaryWriteCharacteristic,
@@ -111,7 +115,7 @@ const themeVars = ref({
 const showBlueTip = ref(false)
 const isBlueOk = ref(false)
 
-const transferObj = ref<{transferData:string,transferProgress:number,recData:string}>({transferData:"",transferProgress:0,recData:""})
+const transferObj = ref<{ transferData: string, transferProgress: number, recData: string }>({transferData: "", transferProgress: 0, recData: ""})
 
 const state = reactive({
   msg: '新搜索中...',
@@ -121,7 +125,7 @@ const state = reactive({
   title: '',
   bleConnected: false,
   bleDeviceId: "",
-  showEle:false,
+  showEle: false,
   eleVal: 0,
   bottom: '',
   center: true
@@ -130,7 +134,7 @@ const state = reactive({
 // 初始化蓝牙
 Taro.openBluetoothAdapter({
   fail: function (res) {
-    console.log("打开适配器失败",res)
+    console.log("打开适配器失败", res)
     if (res.errCode === 10001) {
       showBlueTip.value = true
     }
@@ -141,12 +145,12 @@ Taro.openBluetoothAdapter({
     startDeviceSearch()
   }
 }).catch(function (err) {
-  console.log("打开适配器失败12",err)
+  console.log("打开适配器失败12", err)
 })
 
 Taro.onBluetoothAdapterStateChange((res) => {
   isBlueOk.value = res.available
-  console.log("onBluetoothAdapterStateChange",res)
+  console.log("onBluetoothAdapterStateChange", res)
   if (res.available) {
     startDeviceSearch()
   }
@@ -183,9 +187,9 @@ const startDeviceSearch = () => {
 
 
 Taro.onBluetoothDeviceFound((res) => {
-  console.log("onBluetoothDeviceFound",res)
+  console.log("onBluetoothDeviceFound", res)
   res.devices.forEach((e) => {
-    console.log(e.name,e.localName,e.deviceId)
+    console.log(e.name, e.localName, e.deviceId)
     if (
         (e.name && e.name.toLowerCase().includes("aibt")) ||  // AIBT 小写匹配
         (e.name && e.name.toLowerCase().includes("vin")) ||  // AIBT 小写匹配
@@ -216,7 +220,7 @@ const addDevice = (deviceInfo: DeviceInfo) => {
 }
 
 
-const receiveData = (text:string) => {
+const receiveData = (text: string) => {
   transferObj.value.recData = text
   console.log(text)
 }
@@ -228,37 +232,37 @@ const connectBle = async (deviceId: string) => {
     theDevice.value = deviceMap.get(deviceId)
     character.value = await getPrimaryWriteCharacteristic(deviceId)
 
-    enableNotifyAndListen({deviceId,serviceId:character.value.serviceId,onData:receiveData})
+    enableNotifyAndListen({deviceId, serviceId: character.value.serviceId, onData: receiveData})
 
   }
 }
 
 // 发送场景 1
 
-const onProgress = (text:string,p:number)=>{
+const onProgress = (text: string, p: number) => {
   transferObj.value.transferData = text
   transferObj.value.transferProgress = p
-  console.log("写入日志：",text,p)
+  console.log("写入日志：", text, p)
 }
 
-const sendAudioData = async (buffer:ArrayBuffer) => {
+const sendAudioData = async (buffer: ArrayBuffer, audioId: number) => {
   try {
     transferObj.value.transferProgress = 0
     const deviceId = theDevice.value.deviceId
-    console.log("开始发送音频数据",buffer.byteLength)
-    await writeAudioData({ deviceId:deviceId, serviceId:character.value.serviceId,
-      characteristicId:character.value.characteristicId,value:buffer,chunkDelay:20, onProgress:onProgress})
+    console.log("开始发送音频数据", buffer.byteLength)
+    await writeAudioData({
+      deviceId: deviceId, serviceId: character.value.serviceId,
+      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 20, audioId, onProgress: onProgress
+    })
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
     console.error(e)
   }
 }
 
-const sendSceneData = async (id:number,count:number) => {
+// 删除场景
+const delScene = async (id: number) => {
   try {
-    let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
-    const buffer = await downloadFileAsArrayBuffer(url)
-    // return writeLargeData({ ...options, value: buffer })
     const deviceId = theDevice.value.deviceId
     console.log(character.value)
     transferObj.value.transferProgress = 0
@@ -268,22 +272,101 @@ const sendSceneData = async (id:number,count:number) => {
       serviceId: character.value.serviceId,
       characteristicId: character.value.characteristicId,
       json: {
-        "t": 5,
-        "d": {
-          "a_1": {
-            "type":1,
-            "id":id
-          },
-          "a_2":{
-            "type":3,
-            "velocity":1,
-            "count":count
-          }
+        "cmd": 5,
+        "data": {
+          "id": id,
         }
       },
       onProgress: onProgress,
     })
-    await sendAudioData(buffer)
+  } catch (e) {
+    Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
+    console.error(e)
+  }
+}
+
+// 添加场景
+const sendSceneData = async (id: number, count: number, s: number, f: number, v: number, p: number, t: number) => {
+  try {
+    let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
+    const buffer = await downloadFileAsArrayBuffer(url)
+    // return writeLargeData({ ...options, value: buffer })
+    await sendAudioData(buffer, id)
+    const deviceId = theDevice.value.deviceId
+    console.log(character.value)
+    transferObj.value.transferProgress = 0
+    transferObj.value.transferData = "准备发送消息......"
+    await writeJsonWithLength({
+      deviceId,
+      serviceId: character.value.serviceId,
+      characteristicId: character.value.characteristicId,
+      json: {
+        "cmd": 4,
+        "data": {
+          "s": s,
+          "t": t,
+          "p": p,
+          "id": id,
+          "f": f,
+          "v": v,
+          "c": count
+        }
+      },
+      onProgress: onProgress,
+    })
+
+  } catch (e) {
+    Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
+    console.error(e)
+  }
+}
+
+// 获取场景
+const getSceneData = () => {
+  try {
+    const deviceId = theDevice.value.deviceId
+    transferObj.value.transferProgress = 0
+    transferObj.value.transferData = "准备发送消息......"
+    writeJsonWithLength({
+      deviceId,
+      serviceId: character.value.serviceId,
+      characteristicId: character.value.characteristicId,
+      json: {
+        "cmd": 3, "data": "",
+      },
+      onProgress: onProgress,
+    })
+
+  } catch (e) {
+    Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
+    console.error(e)
+  }
+}
+
+// 设置设备
+const setDeviceData = async () => {
+  try {
+    const deviceId = theDevice.value.deviceId
+    const num = getRandom1To9()
+    let dM = 1
+    if (num <= 4) {
+      dM = 2
+    }
+    transferObj.value.transferProgress = 0
+    transferObj.value.transferData = "准备发送消息......"
+    writeJsonWithLength({
+      deviceId,
+      serviceId: character.value.serviceId,
+      characteristicId: character.value.characteristicId,
+      json: {
+        "cmd": 2, "data": {
+          "d": `M${num}`,
+          "m": dM
+        },
+      },
+      onProgress: onProgress,
+    })
+
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
     console.error(e)
@@ -302,7 +385,7 @@ const sendTestData = async () => {
       serviceId: character.value.serviceId,
       characteristicId: character.value.characteristicId,
       json: {
-        "t": 1
+        "cmd": 1, "data": "",
       },
       onProgress: onProgress,
     })
@@ -344,7 +427,7 @@ onUnmounted(() => {
   border-bottom: 2rpx solid #E0E0E0;
 }
 
-.msg-btn{
+.msg-btn {
   margin-top: 20px;
 }
 
