@@ -301,7 +301,7 @@ const sendAudioMp3Data = async (id: number) => {
   let url = `https://gw.test.waixingkeji.net/ai-device/audio/scen${id}.mp3`
   const buffer = await downloadFileAsArrayBuffer(url)
   // return writeLargeData({ ...options, value: buffer })
-  await sendAudioData(buffer, id)
+  await sendAudioData(buffer, 1)
 }
 
 // 添加场景
