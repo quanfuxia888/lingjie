@@ -17,16 +17,24 @@
           </view>
         </nut-cell>
         <view class="send-msg">
-          <nut-button class="msg-btn" block size="large" type="primary" @click="sendTestData">获取电量</nut-button>
-          <nut-button class="msg-btn" block size="large" type="primary" @click="setDeviceData">设置设备信息</nut-button>
-          <nut-button class="msg-btn" block size="large" type="primary" @click="getSceneData">获取场景信息</nut-button>
-          <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(1)">发送音频1</nut-button>
-          <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(2)">发送音频2</nut-button>
-          <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
-          <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
-          <nut-button class="msg-btn" block size="large" type="default" @click="delScene(1)">删除场景1</nut-button>
-          <nut-button class="msg-btn" block size="large" type="default" @click="delScene(2)">删除场景2</nut-button>
+          <view class="btn-list">
+            <nut-button class="msg-btn" block size="large" type="primary" @click="sendTestData">获取电量</nut-button>
+            <nut-button class="msg-btn" block size="large" type="primary" @click="setDeviceData">设置设备信息</nut-button>
+          </view>
 
+          <nut-button class="msg-btn" block size="large" type="primary" @click="getSceneData">获取场景信息</nut-button>
+          <view class="btn-list">
+            <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(1)">发送音频1</nut-button>
+            <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(2)">发送音频2</nut-button>
+          </view>
+          <view class="btn-list">
+            <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
+            <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
+          </view>
+          <view class="btn-list">
+            <nut-button class="msg-btn" block size="large" type="default" @click="delScene(1)">删除场景1</nut-button>
+            <nut-button class="msg-btn" block size="large" type="default" @click="delScene(2)">删除场景2</nut-button>
+          </view>
         </view>
         <view class="msg-data">
           <view v-if="character.characteristicId!=''">
@@ -213,9 +221,11 @@ Taro.onBluetoothDeviceFound((res) => {
 
 
 const addDevice = (deviceInfo: DeviceInfo) => {
-  Taro.stopBluetoothDevicesDiscovery({success: function (res) {
-      console.log("停止蓝牙搜索",res)
-    }})
+  Taro.stopBluetoothDevicesDiscovery({
+    success: function (res) {
+      console.log("停止蓝牙搜索", res)
+    }
+  })
   showSuccess.value = true
   connectBle(deviceInfo.deviceId)
 }
@@ -254,7 +264,7 @@ const sendAudioData = async (buffer: ArrayBuffer, audioId: number) => {
     console.log("开始发送音频数据", buffer.byteLength)
     await writeAudioData({
       deviceId: deviceId, serviceId: character.value.serviceId,
-      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 150, audioId:audioId, onProgress: onProgress
+      characteristicId: character.value.characteristicId, value: buffer, chunkDelay: 50, audioId: audioId, onProgress: onProgress
     })
   } catch (e) {
     Taro.showToast({title: '发送失败' + JSON.stringify(e), icon: 'none'})
@@ -440,6 +450,11 @@ onUnmounted(() => {
 .msg-data {
   margin-top: 20rpx;
   padding: 10rpx;
+}
+
+.btn-list {
+  display: flex;
+  justify-content: space-between;
 }
 
 .search {
