@@ -18,22 +18,22 @@
         </nut-cell>
         <view class="send-msg">
           <view class="btn-list">
-            <nut-button class="msg-btn" block size="large" type="primary" @click="sendTestData">获取电量</nut-button>
-            <nut-button class="msg-btn" block size="large" type="primary" @click="setDeviceData">设置设备信息</nut-button>
+            <nut-button class="msg-btn" type="primary" @click="sendTestData">获取电量</nut-button>
+            <nut-button class="msg-btn" type="primary" @click="setDeviceData">设置设备信息</nut-button>
           </view>
 
           <nut-button class="msg-btn" block size="large" type="primary" @click="getSceneData">获取场景信息</nut-button>
           <view class="btn-list">
-            <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(1)">发送音频1</nut-button>
-            <nut-button class="msg-btn" block size="large" type="primary" @click="sendAudioMp3Data(2)">发送音频2</nut-button>
+            <nut-button class="msg-btn" type="primary" @click="sendAudioMp3Data(1)">发送音频1</nut-button>
+            <nut-button class="msg-btn" type="primary" @click="sendAudioMp3Data(2)">发送音频2</nut-button>
           </view>
           <view class="btn-list">
-            <nut-button class="msg-btn" block size="large" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
-            <nut-button class="msg-btn" block size="large" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
+            <nut-button class="msg-btn" type="info" @click="sendSceneData(1,5,1,1,1,1,2)">发送场景1</nut-button>
+            <nut-button class="msg-btn" type="default" @click="sendSceneData(2,4,2,0,2,0,3)">发送场景2</nut-button>
           </view>
           <view class="btn-list">
-            <nut-button class="msg-btn" block size="large" type="default" @click="delScene(1)">删除场景1</nut-button>
-            <nut-button class="msg-btn" block size="large" type="default" @click="delScene(2)">删除场景2</nut-button>
+            <nut-button class="msg-btn" type="default" @click="delScene(1)">删除场景1</nut-button>
+            <nut-button class="msg-btn" type="default" @click="delScene(2)">删除场景2</nut-button>
           </view>
         </view>
         <view class="msg-data">
@@ -455,6 +455,7 @@ onUnmounted(() => {
 .btn-list {
   display: flex;
   justify-content: space-between;
+  padding: 0 20rpx;
 }
 
 .search {
